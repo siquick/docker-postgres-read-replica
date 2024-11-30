@@ -1,0 +1,43 @@
+services:
+  postgres_primary:
+    image: postgres:15
+    container_name: postgres_primary
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby=on
+      -c listen_addresses=*
+      -c hba_file=/var/lib/postgresql/data/pg_hba.conf
+
+  postgres_replica:
+    image: postgres:15
+    container_name: postgres_replica
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c hot_standby=on
+      -c listen_addresses=*
+    depends_on:
+      - postgres_primary
+
+volumes:
+  postgres_primary_data:
+  postgres_replica_data:
